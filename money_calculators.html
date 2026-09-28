@@ -63,6 +63,7 @@
   .quizring .qtxt{color:#fff;}
   .quizring .qtxt b{display:block;font-size:1.02rem;font-weight:800;margin-bottom:.15rem;}
   .quizring .qtxt span{font-size:.86rem;color:#cfe9f3;}
+  .quizring.done{background:linear-gradient(135deg,#1aa56e,#018ab5);}
   .quizring a{background:#ff914d;color:#2a1500;font-weight:800;font-size:.9rem;padding:.75rem 1.3rem;border-radius:10px;text-decoration:none;white-space:nowrap;}
 </style>
 </head>
@@ -175,6 +176,21 @@
   [wk,start,yrs].forEach(function(el){el.addEventListener('input',updI);});
   updI();
 })();
+</script>
+<script>
+/* Arrived here FROM the quiz? Don't ask them to take it again - swap the band
+   for the next step instead. Default (no JS, direct visit) shows the quiz. */
+(function(){try{
+  var fromQuiz = /scoreapp\.com/i.test(document.referrer||"") || /[?&]from=quiz\b/i.test(location.search||"");
+  if(!fromQuiz) return;
+  var el=document.querySelector(".quizring"); if(!el) return;
+  el.classList.add("done");
+  var t=el.querySelector(".qtxt");
+  if(t){t.innerHTML='<b>You\'ve already done the quiz.</b><span>Use these numbers in your Discovery session - your adviser will pick up where the quiz left off.</span>';}
+  var a=el.querySelector("a");
+  if(a){a.textContent="Book my Discovery session \u2192";
+        a.href="https://myfutureplan.zohobookings.com/#/4520372000003432002";}
+}catch(e){}})();
 </script>
 </body>
 </html>

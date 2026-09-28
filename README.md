@@ -41,6 +41,24 @@ ordering, verification, troubleshooting, rollback) in `CUSTOM_DOMAIN_SETUP.md`.
 - [x] MyFuture logo (`myfuture_logo.svg`) wired in all four files.
 - [ ] **Awaiting Lara's sign-off** on all figures and the FMA-compliance wording before campaign use.
 
+## The quiz ring
+
+Every tool carries two calls to action: the **MyFuture Wealth Quiz**
+(<https://myfuturewealth.scoreapp.com>) above, and the **Discovery booking** below. A visitor takes
+either.
+
+Tools are quiz-aware. If someone arrives **from** the quiz, the quiz band swaps itself for a
+Discovery prompt instead of asking them to take a quiz they have just finished. Detection is either:
+
+- `document.referrer` contains `scoreapp.com` — automatic, nothing to configure; or
+- the URL carries `?from=quiz` — **use this when linking from a ScoreApp results page**, because
+  referrers are unreliable across redirects and some privacy settings.
+
+So links on the quiz result page should read, e.g.
+`https://myfuture-tools.github.io/spending_planner.html?from=quiz`.
+
+Without JavaScript, or on a direct visit, the quiz band shows as normal. That is the safe default.
+
 ## Linking from the Gamma / PDF lead magnet
 Paste these into the guide's [TOOL LINK] buttons:
 - Goal-setter / lifestyle section -> https://myfuture-tools.github.io/lifestyle_wealth_explorer.html
