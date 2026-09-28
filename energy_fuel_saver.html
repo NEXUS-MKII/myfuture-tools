@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<!-- ============================================================
+     MyFuture · STANDALONE TOOL · Energy & Fuel Saver
+     Spec: AskLara B11.3 (Transport and energy). Behaviour + process levers only.
+     Down counter per category rolling into a parent counter. localStorage.
+     ▼ AL-036: levers are behaviour and process, NEVER provider substitution.
+       The tariff gap is shown and pointed at an independent comparator, and is
+       deliberately EXCLUDED from the counter. Never say savings pay for advice. ▼
+     ▼ FMA: general guidance tool, not advice. All lever ranges need Lara's sign-off. ▼
+     ============================================================ -->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Energy &amp; Fuel Saver | MyFuture</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+  :root{--p:#018ab5;--pd:#004357;--a:#ff914d;--m:#788c96;--ink:#10262e;--paper:#eef2f5;--card:#ffffff;--line:#dfeef3;--mono:'IBM Plex Mono',monospace;--ok:#1aa56e;--warn:#e8742f;}
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Montserrat',sans-serif;color:var(--ink);line-height:1.55;background:var(--paper);}
+  /* shared chrome */
+  .mf-head{background:linear-gradient(135deg,var(--pd),var(--p));padding:14px 22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+  .mf-head .brand{display:flex;align-items:center;gap:10px;color:#fff;font-weight:800;font-size:1.1rem;}
+  .mf-head a.book{background:var(--a);color:#2a1500;text-decoration:none;font-weight:800;font-size:.8rem;padding:.55rem 1rem;border-radius:8px;}
+  .mf-foot{background:var(--pd);color:#cfe9f3;text-align:center;padding:1.6rem 1.1rem;font-size:.8rem;line-height:1.6;}
+  .mf-foot a{color:#fff;font-weight:700;text-decoration:none;}
+  .mf-foot .small{color:#7fb4cb;font-size:.72rem;margin-top:.5rem;max-width:60ch;margin-inline:auto;}
+
+  .wrap{max-width:1080px;margin:0 auto;padding:clamp(1rem,4vw,2.6rem) 1.1rem;}
+  .head{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:1rem;border-bottom:3px solid var(--p);padding-bottom:1.2rem;margin-bottom:1.4rem;}
+  .head .brandlab{font-family:var(--mono);font-size:.72rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--m);margin-bottom:.5rem;}
+  .head h1{font-size:clamp(1.7rem,4vw,2.5rem);font-weight:800;letter-spacing:-.02em;color:var(--pd);line-height:1.05;}
+  .head h1 em{font-style:normal;color:var(--p);}
+  .head .actions{display:flex;gap:.6rem;flex-wrap:wrap;}
+  .btn{font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer;border:none;border-radius:9px;padding:.7rem 1.1rem;transition:transform .15s ease,border-color .15s ease;}
+  .btn:hover{transform:translateY(-2px);}
+  .btn.ghost{background:#fff;color:var(--p);border:1.5px solid var(--line);}
+  .btn.ghost:hover{border-color:var(--p);}
+  .intro{font-size:clamp(1rem,1.7vw,1.1rem);color:#3f565e;max-width:64ch;margin-bottom:1.8rem;}
+  .grid{display:grid;grid-template-columns:1.35fr 1fr;gap:clamp(1rem,2.5vw,1.8rem);align-items:start;}
+  @media(max-width:880px){.grid{grid-template-columns:1fr;}}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:clamp(1.3rem,3vw,1.9rem);}
+  .panel h2{font-size:1.15rem;font-weight:800;color:var(--pd);margin-bottom:.3rem;}
+  .panel .sub{font-size:.88rem;color:var(--m);margin-bottom:1.3rem;}
+
+  /* category block */
+  .cat{border:1px solid var(--line);border-radius:13px;padding:1rem 1.05rem;margin-bottom:1rem;}
+  .cat-head{display:flex;align-items:center;gap:.6rem;margin-bottom:.8rem;}
+  .cat-head .ico{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:#fff;font-size:1rem;flex:0 0 auto;}
+  .cat-head h3{font-size:.95rem;font-weight:800;color:var(--pd);}
+  .cat-head .moneywrap{margin-left:auto;position:relative;width:118px;}
+  .moneywrap span.pre{position:absolute;left:.7rem;top:50%;transform:translateY(-50%);color:var(--m);font-weight:600;font-size:.9rem;}
+  input[type=number]{width:100%;font-family:inherit;font-size:.95rem;font-weight:600;color:var(--ink);padding:.55rem .7rem .55rem 1.55rem;border:1.5px solid var(--line);border-radius:9px;background:#f8fbfc;}
+  input[type=number]:focus{outline:none;border-color:var(--p);background:#fff;}
+  .levers{display:flex;flex-direction:column;gap:.1rem;}
+  .lever{display:grid;grid-template-columns:auto 1fr auto;gap:.6rem;align-items:center;padding:.45rem .2rem;border-top:1px dashed var(--line);}
+  .lever:first-child{border-top:none;}
+  .lever input[type=checkbox]{width:17px;height:17px;accent-color:var(--p);cursor:pointer;flex:0 0 auto;}
+  .lever label{font-size:.85rem;color:#445a61;cursor:pointer;line-height:1.4;}
+  .lever .amt{font-family:var(--mono);font-size:.8rem;font-weight:600;color:var(--m);white-space:nowrap;}
+  .lever.on .amt{color:var(--ok);}
+  .lever.on label{color:var(--ink);font-weight:600;}
+  .catfoot{display:flex;align-items:baseline;gap:.5rem;margin-top:.7rem;padding-top:.6rem;border-top:1.5px solid var(--line);}
+  .catfoot .lab{font-size:.76rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--m);}
+  .catfoot .down{margin-left:auto;font-family:var(--mono);font-size:.95rem;font-weight:700;color:var(--pd);}
+  .catfoot .down b{color:var(--ok);}
+
+  /* summary / counter */
+  .summary{background:var(--pd);color:#fff;border-radius:16px;padding:clamp(1.4rem,3vw,1.9rem);margin-bottom:1.1rem;}
+  .summary .lab{font-family:var(--mono);font-size:.7rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#7fb4cb;}
+  .counter{display:flex;align-items:baseline;gap:.5rem;margin:.5rem 0 .2rem;}
+  .counter .from{font-family:var(--mono);font-size:1.05rem;color:#7fb4cb;text-decoration:line-through;}
+  .counter .arrow{color:var(--a);font-weight:800;}
+  .counter .to{font-size:clamp(2rem,5vw,2.7rem);font-weight:800;line-height:1;letter-spacing:-.02em;}
+  .summary .persub{font-size:.82rem;color:#cfe9f3;}
+  .bigsave{background:var(--a);color:#2a1500;border-radius:12px;padding:.9rem 1rem;margin-top:1.1rem;text-align:center;}
+  .bigsave .n{font-size:1.7rem;font-weight:800;line-height:1.1;}
+  .bigsave .t{font-size:.8rem;font-weight:700;}
+  .yr{display:flex;justify-content:space-between;align-items:baseline;margin-top:.9rem;padding-top:.8rem;border-top:1px solid rgba(255,255,255,.18);font-size:.85rem;color:#cfe9f3;}
+  .yr b{font-family:var(--mono);font-size:1.05rem;color:#fff;}
+
+  .gap{background:#fff;border:1.5px dashed var(--warn);border-radius:14px;padding:1.2rem 1.25rem;margin-bottom:1.1rem;}
+  .gap h3{font-size:.95rem;font-weight:800;color:var(--pd);margin-bottom:.45rem;display:flex;align-items:center;gap:.45rem;}
+  .gap p{font-size:.85rem;color:#445a61;margin-bottom:.7rem;}
+  .gap .note{font-size:.76rem;color:var(--m);font-style:italic;margin-top:.7rem;}
+  .gap a.cmp{display:inline-block;background:#fff;color:var(--p);border:1.5px solid var(--p);font-weight:700;font-size:.82rem;padding:.6rem 1rem;border-radius:9px;text-decoration:none;}
+
+  .cta{text-align:center;margin-top:1.8rem;}
+  .cta a{display:inline-block;background:var(--a);color:#2a1500;font-weight:800;font-size:1rem;padding:.95rem 2rem;border-radius:11px;text-decoration:none;}
+  .footnote{font-size:.78rem;color:var(--m);font-style:italic;margin-top:1.2rem;text-align:center;max-width:70ch;margin-inline:auto;}
+  @media print{
+    body{background:#fff;} .mf-head,.mf-foot,.actions,.btn,.cta{display:none!important;}
+    .panel,.summary,.cat,.gap{border:1px solid #ccc!important;box-shadow:none!important;}
+    .summary{background:#004357!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  }
+</style>
+</head>
+<body>
+<header class="mf-head">
+  <div class="brand"><img src="myfuture_logo.svg" alt="MyFuture" style="height:32px;width:auto;display:block;"></div>
+  <a class="book" href="https://myfutureplan.zohobookings.com/#/4520372000003432002" target="_blank" rel="noopener">Book a free Discovery session</a>
+</header>
+
+<div class="wrap">
+  <div class="head">
+    <div>
+      <div class="brandlab">MyFuture &middot; Free tool</div>
+      <h1>Energy &amp; Fuel <em>Saver</em></h1>
+    </div>
+    <div class="actions">
+      <button class="btn ghost" id="printBtn"><i class="ti ti-printer"></i> Print / PDF</button>
+      <button class="btn ghost" id="resetBtn"><i class="ti ti-refresh"></i> Start again</button>
+    </div>
+  </div>
+
+  <p class="intro">Put in what you spend, then tick what you're willing to change. Everything here is a
+  <strong>habit or a process</strong> &mdash; how much you use, when, and how. Nothing here asks you to switch
+  provider, and nothing here is counted unless you tick it.</p>
+
+  <div class="grid">
+    <div>
+      <div class="panel">
+        <h2>What you spend, and what you'd change</h2>
+        <p class="sub">Monthly figures. Averages across a year are better than last month's bill.</p>
+        <div id="cats"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="summary">
+        <div class="lab">Your monthly energy &amp; fuel</div>
+        <div class="counter">
+          <span class="from" id="cFrom">$0</span>
+          <span class="arrow">&rarr;</span>
+          <span class="to" id="cTo">$0</span>
+        </div>
+        <div class="persub">what it could come down to, on the habits you ticked</div>
+        <div class="bigsave">
+          <div class="n" id="saveM">$0</div>
+          <div class="t">a month, back in your pocket</div>
+        </div>
+        <div class="yr"><span>Over a year</span> <b id="saveY">$0</b></div>
+        <div class="yr" style="border-top:none;padding-top:.2rem"><span>Upper end, if it all lands</span> <b id="saveHi">$0</b></div>
+      </div>
+
+      <div class="gap">
+        <h3><i class="ti ti-scale"></i> Your plan and your tariff</h3>
+        <p>Your provider and plan matter, but they're an <strong>input here, not the answer</strong>. If you'd like
+        to know whether your tariff sits above typical for how much you actually use, check it against an
+        independent comparator &mdash; not us.</p>
+        <a class="cmp" href="https://www.powerswitch.org.nz" target="_blank" rel="noopener">Powerswitch (Consumer NZ) &rarr;</a>
+        <p class="note">Anything you'd save by switching is deliberately left out of the numbers above. We'd rather
+        show you only what you control.</p>
+      </div>
+
+      <p class="footnote" style="margin-top:0;text-align:left">The ranges behind each tick are indicative, for
+      guidance only, and will vary with your home, your vehicle and your habits.
+      <strong>[Ranges to be sourced and signed off before go-live.]</strong></p>
+    </div>
+  </div>
+
+  <div class="cta"><a href="https://myfutureplan.zohobookings.com/#/4520372000003432002" target="_blank" rel="noopener">Turn what you've found into a plan with a specialist</a></div>
+  <p class="footnote">A general guidance tool only - not personalised financial advice. For a plan built around your situation, that's what MyFuture is for.</p>
+</div>
+
+<footer class="mf-foot">
+  <div><a href="https://www.myfuture.co.nz" target="_blank" rel="noopener">myfuture.co.nz</a> &middot; Helping everyday Kiwis build financial freedom</div>
+  <div class="small">MyFuture is regulated by the FMA to provide financial advice. This tool is for general illustration only and does not constitute personalised financial advice.</div>
+</footer>
+
+<script>
+(function(){
+  // B11.3 category model. Every lever is BEHAVIOUR or PROCESS (AL-036).
+  // pct = [low, high] share of that category's spend. Conservative low drives the headline.
+  var CATS = [
+    { id:"power", name:"Power", icon:"ti-bolt", color:"#018ab5", levers:[
+      {id:"p1", label:"Heat pump set to 18-20°C, not higher", pct:[4,9]},
+      {id:"p2", label:"Heat only the rooms in use; curtains closed at dusk", pct:[5,10]},
+      {id:"p3", label:"Shorter showers, or an efficient shower head", pct:[5,11]},
+      {id:"p4", label:"Cold washes, and only full loads", pct:[2,5]},
+      {id:"p5", label:"Big loads shifted off peak, where the plan allows", pct:[3,7]},
+      {id:"p6", label:"Second fridge or unused appliances switched off", pct:[2,5]}
+    ]},
+    { id:"gas", name:"Gas / LPG", icon:"ti-flame", color:"#e8742f", levers:[
+      {id:"g1", label:"Hot water thermostat at 60°C, not higher", pct:[4,9]},
+      {id:"g2", label:"Bottles refilled on a schedule, not swapped in a hurry", pct:[3,7]}
+    ]},
+    { id:"fuel", name:"Petrol &amp; diesel", icon:"ti-gas-station", color:"#004357", levers:[
+      {id:"f1", label:"Trips chained into one run instead of several", pct:[5,11]},
+      {id:"f2", label:"Tyre pressures checked monthly", pct:[2,4]},
+      {id:"f3", label:"Easing off on the open road", pct:[4,9]},
+      {id:"f4", label:"Roof racks and boot load taken out when not needed", pct:[1,3]},
+      {id:"f5", label:"One car-free day a week, where it's practical", pct:[8,14]}
+    ]},
+    { id:"transit", name:"Public transport &amp; parking", icon:"ti-bus", color:"#788c96", levers:[
+      {id:"t1", label:"Concession or monthly pass instead of daily fares", pct:[8,15]},
+      {id:"t2", label:"Park and ride once or twice a week", pct:[5,12]}
+    ]},
+    { id:"vehicle", name:"Vehicle running", icon:"ti-car", color:"#1aa56e", levers:[
+      {id:"v1", label:"Serviced on schedule rather than when something goes wrong", pct:[4,9]},
+      {id:"v2", label:"Work booked ahead instead of as an emergency", pct:[3,7]}
+    ]}
+  ];
+
+  var KEY="mf_energy_fuel_saver_v1", root=document;
+  var fmt=function(n){return "$"+Math.round(n).toLocaleString();};
+  var num=function(id){var el=root.getElementById(id);var v=el?parseFloat(el.value):0;return isNaN(v)?0:Math.max(0,v);};
+
+  // build
+  var host=root.getElementById("cats");
+  CATS.forEach(function(c){
+    var levers=c.levers.map(function(l){
+      return '<div class="lever" data-lever="'+l.id+'">'+
+        '<input type="checkbox" id="'+l.id+'" />'+
+        '<label for="'+l.id+'">'+l.label+'</label>'+
+        '<span class="amt" data-amt="'+l.id+'">&mdash;</span></div>';
+    }).join("");
+    var el=document.createElement("div");
+    el.className="cat";
+    el.innerHTML =
+      '<div class="cat-head">'+
+        '<span class="ico" style="background:'+c.color+'"><i class="ti '+c.icon+'"></i></span>'+
+        '<h3>'+c.name+'</h3>'+
+        '<div class="moneywrap"><span class="pre">$</span><input id="'+c.id+'" type="number" inputmode="numeric" placeholder="0" aria-label="'+c.name.replace(/&amp;/g,"and")+' per month" /></div>'+
+      '</div>'+
+      '<div class="levers">'+levers+'</div>'+
+      '<div class="catfoot"><span class="lab">'+c.name+' a month</span>'+
+        '<span class="down" data-down="'+c.id+'">$0 &rarr; <b>$0</b></span></div>';
+    host.appendChild(el);
+  });
+
+  function calc(){
+    var totalNow=0, totalLo=0, totalHi=0;
+    CATS.forEach(function(c){
+      var spend=num(c.id), lo=0, hi=0;
+      c.levers.forEach(function(l){
+        var on=root.getElementById(l.id).checked;
+        var row=root.querySelector('[data-lever="'+l.id+'"]');
+        var a=spend*l.pct[0]/100, b=spend*l.pct[1]/100;
+        row.classList.toggle("on", on);
+        root.querySelector('[data-amt="'+l.id+'"]').innerHTML =
+          spend>0 ? (on ? "-"+fmt(a) : l.pct[0]+"-"+l.pct[1]+"%") : (l.pct[0]+"-"+l.pct[1]+"%");
+        if(on){ lo+=a; hi+=b; }
+      });
+      // levers overlap in the real world, so cap the claim at a third of the category
+      var cap=spend*0.34;
+      if(lo>cap){lo=cap;} if(hi>spend*0.5){hi=spend*0.5;}
+      root.querySelector('[data-down="'+c.id+'"]').innerHTML = fmt(spend)+" &rarr; <b>"+fmt(spend-lo)+"</b>";
+      totalNow+=spend; totalLo+=lo; totalHi+=hi;
+    });
+    root.getElementById("cFrom").textContent=fmt(totalNow);
+    root.getElementById("cTo").textContent=fmt(totalNow-totalLo);
+    root.getElementById("saveM").textContent=fmt(totalLo);
+    root.getElementById("saveY").textContent=fmt(totalLo*12);
+    root.getElementById("saveHi").textContent=fmt(totalHi*12)+" a year";
+    save();
+  }
+
+  function allLevers(){var a=[];CATS.forEach(function(c){c.levers.forEach(function(l){a.push(l.id);});});return a;}
+  function save(){try{var d={spend:{},levers:{}};
+    CATS.forEach(function(c){d.spend[c.id]=num(c.id);});
+    allLevers().forEach(function(id){d.levers[id]=root.getElementById(id).checked;});
+    localStorage.setItem(KEY,JSON.stringify(d));}catch(e){}}
+  function load(){try{var raw=localStorage.getItem(KEY);if(!raw)return;var d=JSON.parse(raw);
+    CATS.forEach(function(c){if(d.spend&&d.spend[c.id]){root.getElementById(c.id).value=d.spend[c.id];}});
+    allLevers().forEach(function(id){if(d.levers&&d.levers[id]){root.getElementById(id).checked=true;}});
+  }catch(e){}}
+
+  root.addEventListener("input",function(e){if(e.target.matches("input")){calc();}});
+  root.addEventListener("change",function(e){if(e.target.matches("input[type=checkbox]")){calc();}});
+  root.getElementById("printBtn").addEventListener("click",function(){window.print();});
+  root.getElementById("resetBtn").addEventListener("click",function(){
+    if(!confirm("Clear your numbers and start fresh?"))return;
+    try{localStorage.removeItem(KEY);}catch(e){}
+    root.querySelectorAll("input[type=number]").forEach(function(i){i.value="";});
+    root.querySelectorAll("input[type=checkbox]").forEach(function(i){i.checked=false;});
+    calc();
+  });
+  load();calc();
+})();
+</script>
+</body>
+</html>
